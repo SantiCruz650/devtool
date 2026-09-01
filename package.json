@@ -6,8 +6,8 @@
   ],
   "scripts": {
     "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r --if-present lint",
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r run lint"
+    "typecheck": "pnpm -r typecheck"
   }
 }
