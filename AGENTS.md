@@ -15,3 +15,6 @@ Commits convencionales (feat:, fix:, test:, chore:). Un prompt = unatarea = un c
 No modificar configuración de build (tsconfig, vite.config) sinseñalarlo explícitamente como cambio de configuración.
 Los tipos son parte del producto: nada de any salvo justificaciónescrita en un comentario adyacente.
 Antes de dar una tarea por terminada: pnpm lint, pnpm typechecky pnpm test deben pasar los tres. Sin excepciones.
+Toda tarea termina con una sección "Explicación para humanos": máximo5 líneas, español simple, sin jerga: qué se hizo, por qué, y cómo severificó. El lector no sabe programar.
+En packages/core: escribe PRIMERO los tests especificados en la tarea,muestra que fallan, luego implementa hasta que pasen.
+Si una instrucción es ambigua, o una API no la conoces con certeza,DETENTE y escribe "PREGUNTA: ..." al inicio del reporte. Jamásadivines en silencio.

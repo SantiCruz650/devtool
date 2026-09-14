@@ -26,6 +26,12 @@ export class PermissionRequiredError extends Error {
   }
 }
 
+export function extractCompleteLines(partial: string, chunk: string): { lines: string[]; remainder: string } {
+  const parts = (partial + chunk).split("\n");
+  const remainder = parts.pop() ?? "";
+  return { lines: parts.map((line) => (line.endsWith("\r") ? line.slice(0, -1) : line)), remainder };
+}
+
 export class FileSystemLogSource implements LogSource {
   readonly id: string;
   readonly name: string;
@@ -122,15 +128,11 @@ export class FileSystemLogSource implements LogSource {
       }
 
       const chunk = await file.slice(this.offset).text();
-      const combined = this.partialBuffer + chunk;
-      const parts = combined.split(/\r?\n/);
-      const lastPart = parts[parts.length - 1] ?? "";
-      const completeLines = parts.slice(0, -1);
+      const extracted = extractCompleteLines(this.partialBuffer, chunk);
+      this.partialBuffer = extracted.remainder;
 
-      this.partialBuffer = lastPart === "" ? "" : lastPart;
-
-      if (completeLines.length > 0) {
-        const batch = completeLines.map((line) => parseLine(line, this.handle.name));
+      if (extracted.lines.length > 0) {
+        const batch = extracted.lines.map((line) => parseLine(line, this.handle.name));
         this.emit(batch);
       }
 
