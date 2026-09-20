@@ -1,8 +1,0 @@
-{
-  "name": "@devtool/demo-backend",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "node index.js"
-  }
-}

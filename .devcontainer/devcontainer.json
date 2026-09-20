@@ -1,6 +1,0 @@
-{
-  "name": "devtool",
-  "image": "mcr.microsoft.com/devcontainers/typescript-node:20",
-  "forwardPorts": [5173],
-  "postCreateCommand": "npm install -g opencode-ai pnpm"
-}
