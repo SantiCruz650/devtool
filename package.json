@@ -5,9 +5,9 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "lint": "pnpm -r --if-present lint",
-    "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck"
+    "dev": "npm run dev --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "test": "npm test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present"
   }
 }
