@@ -7,3 +7,5 @@ export { RemoteLogSource } from "./remote-log-source.js";
 export type { TailResponse } from "./remote-log-source.js";
 export { Correlator } from "./correlator.js";
 export type { CorrelationResult, RequestRecord } from "./correlator.js";
+export { executeRequest, MAX_BODY_CHARS } from "./http-client.js";
+export type { HttpRequestInput, HttpResponseInfo } from "./http-client.js";
