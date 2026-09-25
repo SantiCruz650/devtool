@@ -1,5 +1,6 @@
 import LogStreamPanel from './LogStreamPanel'
 import RequestRunner from './RequestRunner'
+import HistoryPanel from './components/HistoryPanel'
 
 function App() {
   return (
@@ -9,6 +10,12 @@ function App() {
         <RequestRunner />
       </div>
       <LogStreamPanel />
+      <section className="mx-auto mt-6 max-w-5xl rounded-xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl">
+        <h2 className="text-xl font-semibold text-slate-100">Historial</h2>
+        <div className="mt-4">
+          <HistoryPanel />
+        </div>
+      </section>
     </main>
   )
 }

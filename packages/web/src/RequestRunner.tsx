@@ -4,6 +4,7 @@ import type { HttpRequestInput, HttpResponseInfo } from "@devtool/core";
 import RequestForm from "./components/RequestForm";
 import ResponseViewer from "./components/ResponseViewer";
 import { useCorrelationStore } from "./lib/correlation-store";
+import { saveHistory, toHistoryEntry } from "./lib/db";
 
 export default function RequestRunner() {
   const [sending, setSending] = useState(false);
@@ -22,6 +23,11 @@ export default function RequestRunner() {
         startedAt: Date.now(),
         durationMs: res.durationMs,
       });
+      try {
+        await saveHistory(toHistoryEntry(input, res));
+      } catch (e) {
+        console.warn("No se pudo guardar en historial:", e);
+      }
     } finally {
       setSending(false);
     }
