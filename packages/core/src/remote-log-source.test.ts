@@ -168,4 +168,18 @@ describe("RemoteLogSource", () => {
     expect(received).toEqual(["INFO one"]);
     expect(urls).toHaveLength(1);
   });
+
+  it("resets on rotation and delivers only new lines without mixing old buffer", async () => {
+    const fetchImpl = fakeFetchQueue([
+      { size: 100, truncated: false, data: "INFO old-partial " },
+      { size: 40, truncated: true, data: "WARN new\n" },
+    ], []);
+    const source = new RemoteLogSource(() => "https://api.test/logs", { fetchImpl, readFrom: "start" });
+    const received: string[] = [];
+    source.subscribe((lines) => received.push(...lines.map((line) => line.raw)));
+    await source.start();
+    await vi.advanceTimersByTimeAsync(600);
+    expect(received).toEqual(["WARN new"]);
+    await source.stop();
+  });
 });

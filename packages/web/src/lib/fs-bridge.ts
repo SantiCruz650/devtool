@@ -95,7 +95,7 @@ export class OpfsLogSimulator {
           data: line,
         });
         await writable.close();
-        this.offset += line.length;
+        this.offset += new TextEncoder().encode(line).byteLength;
       }
     })();
 

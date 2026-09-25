@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { RequestRecord } from "@devtool/core/src/correlator.js";
+import type { RequestRecord } from "@devtool/core";
 import { useCorrelationStore } from "./lib/correlation-store";
 
 const REQUEST_URL_KEY = "devtool.requestUrl";

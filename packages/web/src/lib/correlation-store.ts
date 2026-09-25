@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { Correlator, type CorrelationResult, type RequestRecord } from "@devtool/core/src/correlator.js";
+import { Correlator, type CorrelationResult, type RequestRecord } from "@devtool/core";
 import type { LogLine } from "@devtool/core";
 
 type CorrelationState = {

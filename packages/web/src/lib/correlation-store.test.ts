@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { Correlator, type RequestRecord } from "@devtool/core/src/correlator.js";
+import { Correlator, type RequestRecord } from "@devtool/core";
 import { parseLine } from "@devtool/core";
 import { useCorrelationStore } from "./correlation-store";
 

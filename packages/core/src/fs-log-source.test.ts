@@ -32,9 +32,10 @@ class FakeFileHandle implements FileHandleLike {
       throw new Error("temporary failure");
     }
 
+    const bytes = new TextEncoder().encode(this.buf);
     return {
-      size: this.buf.length,
-      slice: (start = 0, end = this.buf.length) => new Blob([this.buf.slice(start, end)]),
+      size: bytes.byteLength,
+      slice: (start = 0, end = bytes.byteLength) => new Blob([bytes.slice(start, end)]),
     };
   }
 
@@ -213,6 +214,26 @@ describe("FileSystemLogSource", () => {
     await vi.advanceTimersByTimeAsync(300);
 
     expect(received).toEqual([["INFO partial 550e8400-e29b-41d4-a716-446655440000"]]);
+    await source.stop();
+  });
+
+  it("handles multibyte UTF-8 across polls without losing or duplicating lines", async () => {
+    expect("🚀".length).toBe(2);
+    expect(new TextEncoder().encode("🚀").byteLength).toBe(4);
+
+    const line1 = "línea con tilde y emoji 🚀\n";
+    const line2 = "segunda línea ok\n";
+    const handle = new FakeFileHandle("app.log", line1);
+    const source = new FileSystemLogSource(handle, { readFrom: "start" });
+    const received: string[][] = [];
+    source.subscribe((lines) => received.push(lines.map((line) => line.raw)));
+
+    await source.start();
+    await vi.advanceTimersByTimeAsync(300);
+    handle.append(line2);
+    await vi.advanceTimersByTimeAsync(300);
+
+    expect(received).toEqual([["línea con tilde y emoji 🚀"], ["segunda línea ok"]]);
     await source.stop();
   });
 });

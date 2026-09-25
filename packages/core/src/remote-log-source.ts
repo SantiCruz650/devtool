@@ -95,6 +95,11 @@ export class RemoteLogSource implements LogSource {
         return;
       }
 
+      if (payload.truncated === true || (this.offset !== null && payload.size < this.offset)) {
+        this.partialBuffer = "";
+        this.offset = payload.size;
+      }
+
       const extracted = extractCompleteLines(this.partialBuffer, payload.data);
       this.partialBuffer = extracted.remainder;
       if (extracted.lines.length > 0) {

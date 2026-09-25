@@ -3,6 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node index.js"
+    "dev": "node index.js",
+    "typecheck": "node --check index.js",
+    "test": "node --test",
+    "lint": "node --check index.js"
   }
 }

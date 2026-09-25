@@ -5,6 +5,7 @@ export type PermissionStateLike = "granted" | "denied" | "prompt";
 
 export interface BlobLike {
   text(): Promise<string>;
+  arrayBuffer(): Promise<ArrayBuffer>;
 }
 
 export interface FileLike {
@@ -44,6 +45,7 @@ export class FileSystemLogSource implements LogSource {
   private offset = 0;
   private partialBuffer = "";
   private stopped = false;
+  private readonly decoder = new TextDecoder("utf-8");
 
   constructor(handle: FileHandleLike, opts: { pollIntervalMs?: number; readFrom?: "start" | "end" } = {}) {
     this.handle = handle;
@@ -127,7 +129,9 @@ export class FileSystemLogSource implements LogSource {
         return;
       }
 
-      const chunk = await file.slice(this.offset).text();
+      const buffer = await file.slice(this.offset).arrayBuffer();
+      this.offset += buffer.byteLength;
+      const chunk = this.decoder.decode(buffer, { stream: true });
       const extracted = extractCompleteLines(this.partialBuffer, chunk);
       this.partialBuffer = extracted.remainder;
 
@@ -135,8 +139,6 @@ export class FileSystemLogSource implements LogSource {
         const batch = extracted.lines.map((line) => parseLine(line, this.handle.name));
         this.emit(batch);
       }
-
-      this.offset += chunk.length;
     } catch {
       // Ignore transient read failures; polling continues.
     }
