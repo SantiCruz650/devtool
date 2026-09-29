@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "DevTool Local Bridge",
+  "version": "0.1.0",
+  "description": "Puente CORS para el API client local-first de DevTool. Ejecuta requests HTTP hacia localhost sin restricciones de CORS.",
+  "permissions": [],
+  "host_permissions": ["http://localhost/*", "http://127.0.0.1/*"],
+  "background": { "service_worker": "background.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://localhost/*", "http://127.0.0.1/*", "https://*/*"],
+      "js": ["content-script.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
