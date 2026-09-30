@@ -65,6 +65,7 @@ export default function LogStreamPanel() {
   const [selectedSource, setSelectedSource] = useState<SourceType>("mock");
   const [sourceName, setSourceName] = useState<string>("Sin origen activo");
   const [isRunning, setIsRunning] = useState(false);
+  const [stopped, setStopped] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
@@ -83,7 +84,6 @@ export default function LogStreamPanel() {
       return;
     }
 
-    current.unsubscribe();
     await current.stop();
     setIsRunning(false);
     setSourceName("Sin origen activo");
@@ -103,6 +103,7 @@ export default function LogStreamPanel() {
   async function startSelectedSource(nextSource: SourceType): Promise<void> {
     await stopActiveSource();
     clearLines();
+    setStopped(false);
     setPermissionError(null);
     setIsRunning(false);
     setConsecutiveErrors(0);
@@ -135,7 +136,9 @@ export default function LogStreamPanel() {
 
       if (nextSource === "opfs-demo") {
         const handle = await createOpfsDemoHandle();
-        const simulator = new OpfsLogSimulator(handle);
+        const simulator = new OpfsLogSimulator(handle, 400, {
+          requestIdProvider: () => useCorrelationStore.getState().requests.map((r) => r.requestId).slice(-10),
+        });
         const source = new FileSystemLogSource(handle, { readFrom: "end" });
         const unsubscribe = source.subscribe(appendSourceLines);
         await simulator.start();
@@ -167,7 +170,10 @@ export default function LogStreamPanel() {
         activeSourceRef.current = {
           name: source.name,
           unsubscribe,
-          stop: () => source.stop(),
+          stop: async () => {
+            unsubscribe();
+            await source.stop();
+          },
         };
         setSourceName(source.name);
         setIsRunning(true);
@@ -203,6 +209,11 @@ export default function LogStreamPanel() {
     await startSelectedSource(nextSource);
   }
 
+  async function handleStop(): Promise<void> {
+    await stopActiveSource();
+    setStopped(true);
+  }
+
   function handleRemoteBaseChange(value: string): void {
     setRemoteBase(value);
     localStorage.setItem("devtool.remoteBase", value);
@@ -221,14 +232,25 @@ export default function LogStreamPanel() {
           <h2 className="text-xl font-semibold text-slate-100">Log stream</h2>
           <p className="mt-1 text-sm text-slate-400">{lines.length} líneas en memoria</p>
         </div>
-        <button
-          className="rounded-md bg-cyan-400 px-4 py-2 font-medium text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isRunning}
-          onClick={() => void startSelectedSource(selectedSource)}
-          type="button"
-        >
-          {isRunning ? "En ejecución" : "Iniciar stream"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="rounded-md bg-cyan-400 px-4 py-2 font-medium text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={isRunning}
+            onClick={() => void startSelectedSource(selectedSource)}
+            type="button"
+          >
+            {isRunning ? "En ejecución" : "Iniciar stream"}
+          </button>
+          {isRunning && !stopped && (
+            <button
+              className="rounded-md border border-slate-600 px-4 py-2 font-medium text-slate-200 transition hover:border-red-400 hover:text-red-300"
+              onClick={() => void handleStop()}
+              type="button"
+            >
+              Stop
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-3">

@@ -20,17 +20,23 @@ export async function createOpfsDemoHandle(): Promise<FileSystemFileHandle> {
   return await demoDir.getFileHandle(OPFS_DEMO_FILE, { create: true });
 }
 
+export type OpfsSimulatorOptions = {
+  requestIdProvider?: () => string[];
+};
+
 export class OpfsLogSimulator {
   private readonly handle: FileSystemFileHandle;
   private readonly intervalMs: number;
+  private readonly requestIdProvider?: () => string[];
   private intervalId: number | undefined;
   private offset = 0;
   private writeInFlight: Promise<void> | null = null;
   private stopped = false;
 
-  constructor(handle: FileSystemFileHandle, intervalMs = 400) {
+  constructor(handle: FileSystemFileHandle, intervalMs = 400, opts?: OpfsSimulatorOptions) {
     this.handle = handle;
     this.intervalMs = intervalMs;
+    this.requestIdProvider = opts?.requestIdProvider;
   }
 
   async start(): Promise<void> {
@@ -57,6 +63,15 @@ export class OpfsLogSimulator {
     }
   }
 
+  private getProvidedIds(): string[] {
+    try {
+      const ids = this.requestIdProvider?.() ?? [];
+      return Array.isArray(ids) ? ids : [];
+    } catch {
+      return [];
+    }
+  }
+
   private async tick(): Promise<void> {
     if (this.stopped) {
       return;
@@ -66,6 +81,11 @@ export class OpfsLogSimulator {
     const lines = Array.from({ length: lineCount }, () => {
       const timestamp = new Date().toISOString();
       const level = ['DEBUG', 'INFO', 'WARN', 'ERROR'][Math.floor(Math.random() * 4)] ?? 'INFO';
+      const providedIds = this.getProvidedIds();
+      if (providedIds.length > 0 && Math.random() < 0.7) {
+        const chosen = providedIds[Math.floor(Math.random() * providedIds.length)] ?? providedIds[0];
+        return `[${timestamp}] ${level} procesando batch req=${chosen}\n`;
+      }
       const maybeUuid = Math.random() < 0.4 ? crypto.randomUUID() : null;
       const messageTemplates = [
         'GET /api/users',
