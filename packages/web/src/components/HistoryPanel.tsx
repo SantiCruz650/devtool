@@ -72,7 +72,27 @@ export default function HistoryPanel() {
   }
 
   useEffect(() => {
-    void reload();
+    let cancelled = false;
+    async function loadInitialEntries(): Promise<void> {
+      try {
+        const items = await listHistory(50);
+        if (!cancelled) {
+          setEntries(items);
+        }
+      } catch {
+        if (!cancelled) {
+          setEntries([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+    void loadInitialEntries();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const selected = entries.find((entry) => entry.requestId === selectedId) ?? null;

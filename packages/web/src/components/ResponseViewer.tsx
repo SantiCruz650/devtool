@@ -36,7 +36,7 @@ export default function ResponseViewer({ response }: ResponseViewerProps) {
     );
   }
 
-  let prettyBody = response.bodyText;
+  let prettyBody: string;
   try {
     const parsed: unknown = JSON.parse(response.bodyText);
     prettyBody = JSON.stringify(parsed, null, 2);
