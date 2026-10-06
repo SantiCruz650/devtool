@@ -9,6 +9,7 @@ import {
 } from "@devtool/core";
 import { createOpfsDemoHandle, OpfsLogSimulator, pickLogFile } from "./lib/fs-bridge";
 import { useCorrelationStore } from "./lib/correlation-store";
+import { CopyButton, EmptyState, LogLevelTag, MethodBadge, StatusBadge } from "./ui/primitives";
 
 type SourceType = "mock" | "opfs-demo" | "file-picker" | "remote";
 
@@ -30,14 +31,6 @@ const useLogLineStore = create<LogLineState>((set) => ({
     set((state) => ({ lines: [...state.lines, ...newLines].slice(-200) })),
   clearLines: () => set({ lines: [] }),
 }));
-
-const levelStyles: Record<LogLine["level"], string> = {
-  debug: "bg-slate-700 text-slate-200",
-  info: "bg-blue-500/20 text-blue-300",
-  warn: "bg-amber-500/20 text-amber-300",
-  error: "bg-red-500/20 text-red-300",
-  unknown: "bg-slate-700 text-slate-300",
-};
 
 const sourceLabels: Record<SourceType, string> = {
   mock: "Mock (en memoria)",
@@ -67,7 +60,6 @@ export default function LogStreamPanel() {
   const [isRunning, setIsRunning] = useState(false);
   const [stopped, setStopped] = useState(false);
   const [permissionError, setPermissionError] = useState<string | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [consecutiveErrors, setConsecutiveErrors] = useState(0);
   const [now, setNow] = useState(() => Date.now());
   const [remoteBase, setRemoteBase] = useState(() => localStorage.getItem("devtool.remoteBase") ?? "http://localhost:3000");
@@ -219,14 +211,8 @@ export default function LogStreamPanel() {
     localStorage.setItem("devtool.remoteBase", value);
   }
 
-  async function copyRequestId(requestId: string): Promise<void> {
-    await navigator.clipboard.writeText(requestId);
-    setCopiedId(requestId);
-    window.setTimeout(() => setCopiedId(null), 1200);
-  }
-
   return (
-    <section className="w-full max-w-5xl rounded-xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl">
+    <section className="w-full rounded-xl border border-slate-700 bg-slate-900/80 p-5 shadow-xl">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-semibold text-slate-100">Log stream</h2>
@@ -234,7 +220,7 @@ export default function LogStreamPanel() {
         </div>
         <div className="flex gap-2">
           <button
-            className="rounded-md bg-cyan-400 px-4 py-2 font-medium text-slate-950 transition hover:bg-cyan-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-md bg-cyan-400 px-4 py-2 font-medium text-slate-950 transition-colors hover:bg-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isRunning}
             onClick={() => void startSelectedSource(selectedSource)}
             type="button"
@@ -243,7 +229,7 @@ export default function LogStreamPanel() {
           </button>
           {isRunning && !stopped && (
             <button
-              className="rounded-md border border-slate-600 px-4 py-2 font-medium text-slate-200 transition hover:border-red-400 hover:text-red-300"
+              className="rounded-md border border-slate-600 px-4 py-2 font-medium text-slate-200 transition-colors hover:border-red-400 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60"
               onClick={() => void handleStop()}
               type="button"
             >
@@ -253,14 +239,14 @@ export default function LogStreamPanel() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="mt-4 inline-flex flex-wrap gap-1 rounded-lg bg-slate-800/60 p-1">
         {(Object.entries(sourceLabels) as Array<[SourceType, string]>).map(([key, label]) => (
           <button
             key={key}
-            className={`rounded-full border px-3 py-1.5 text-sm transition ${
+            className={`rounded-md px-3 py-1.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${
               selectedSource === key
-                ? "border-cyan-400 bg-cyan-500/20 text-cyan-200"
-                : "border-slate-600 bg-slate-800 text-slate-300 hover:border-slate-500"
+                ? "bg-slate-700 text-cyan-200"
+                : "text-slate-400 hover:text-slate-200"
             }`}
             onClick={() => {
               void handleSourceChange(key);
@@ -299,6 +285,11 @@ export default function LogStreamPanel() {
         </div>
       )}
 
+      {lines.length === 0 ? (
+        <div className="mt-5">
+          <EmptyState message="Sin logs todavía — pulsa Iniciar stream" />
+        </div>
+      ) : (
       <ul className="mt-5 max-h-[32rem] space-y-1 overflow-y-auto font-mono text-sm" aria-live="polite">
         {lines.map((line) => {
           const requestId = line.requestIds[0];
@@ -310,24 +301,16 @@ export default function LogStreamPanel() {
               <time className="text-slate-500" dateTime={line.timestamp ?? undefined}>
                 {formatTimestamp(line.timestamp)}
               </time>
-              <span className={`rounded px-2 py-0.5 text-xs uppercase ${levelStyles[line.level]}`}>
-                {line.level}
-              </span>
+              <LogLevelTag level={line.level} />
               <span className="min-w-0 flex-1 break-all text-slate-300">{line.raw}</span>
               {requestId !== undefined && (
-                <button
-                  className="max-w-full truncate rounded bg-cyan-400/15 px-2 py-1 text-xs text-cyan-300 hover:bg-cyan-400/25"
-                  onClick={() => void copyRequestId(requestId)}
-                  title="Copiar UUID"
-                  type="button"
-                >
-                  {copiedId === requestId ? "Copiado" : requestId}
-                </button>
+                <CopyButton text={requestId} label={requestId} />
               )}
             </li>
           );
         })}
       </ul>
+      )}
 
       <section className="mt-6 border-t border-slate-700 pt-5">
         <h3 className="text-lg font-semibold text-slate-100">Correlaciones</h3>
@@ -335,13 +318,6 @@ export default function LogStreamPanel() {
           {requests.map((request) => {
             const isSelected = request.requestId === selectedRequestId;
             const correlation = isSelected ? getCorrelation(request.requestId) : null;
-            const statusClass = request.statusCode === null
-              ? "bg-slate-700 text-slate-300"
-              : request.statusCode >= 200 && request.statusCode < 300
-                ? "bg-emerald-500/20 text-emerald-300"
-                : request.statusCode >= 400
-                  ? "bg-red-500/20 text-red-300"
-                  : "bg-slate-700 text-slate-300";
             const shortUrl = request.url.length > 64 ? `${request.url.slice(0, 61)}...` : request.url;
             const ageSeconds = Math.max(0, Math.floor((now - request.startedAt) / 1000));
             const age = ageSeconds < 60 ? `hace ${ageSeconds}s` : `hace ${Math.floor(ageSeconds / 60)}m`;
@@ -356,23 +332,27 @@ export default function LogStreamPanel() {
             return (
               <div key={request.requestId}>
                 <button
-                  className={`flex w-full flex-wrap items-center gap-3 rounded border px-3 py-2 text-left ${isSelected ? "border-cyan-400 bg-cyan-950/50" : "border-slate-700 bg-slate-950/40 hover:border-slate-500"}`}
+                  className={`flex w-full flex-wrap items-center gap-3 rounded border px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/60 ${isSelected ? "border-cyan-400 bg-cyan-950/50" : "border-slate-700 bg-slate-950/40 hover:border-slate-500"}`}
                   onClick={() => selectRequest(isSelected ? null : request.requestId)}
                   type="button"
                 >
-                  <span className="font-mono text-xs text-cyan-300">{request.method}</span>
+                  <MethodBadge method={request.method} />
                   <span className="min-w-0 flex-1 truncate text-sm text-slate-300">{shortUrl}</span>
-                  <span className={`rounded px-2 py-0.5 text-xs ${statusClass}`}>{request.statusCode ?? "-"}</span>
+                  {request.statusCode === null ? (
+                    <span className="rounded border border-slate-600 bg-slate-800 px-2 py-0.5 text-xs text-slate-300">-</span>
+                  ) : (
+                    <StatusBadge status={request.statusCode} />
+                  )}
                   <span className="text-xs text-slate-500">{age}</span>
                 </button>
                 {isSelected && (
                   <div className="mt-2 space-y-1 border-l-2 border-cyan-400/40 pl-3 font-mono text-xs">
                     {correlationLines.length === 0 && (
-                      <p className="py-2 text-sm font-sans text-slate-400">Sin coincidencias aún — los logs pueden tardar unos segundos</p>
+                      <EmptyState message="Sin coincidencias aún — los logs pueden tardar unos segundos" />
                     )}
                     {correlationLines.map(({ line, kind }) => (
-                      <div className={`flex gap-2 ${kind === "context" ? "opacity-60" : "rounded bg-cyan-500/20 ring-1 ring-cyan-400/60"}`} key={line.id}>
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] uppercase ${levelStyles[line.level]}`}>{line.level}</span>
+                      <div className={`flex gap-2 transition-colors ${kind === "context" ? "opacity-60" : "rounded bg-cyan-500/20 ring-1 ring-cyan-400/60"}`} key={line.id}>
+                        <LogLevelTag level={line.level} />
                         <span className="break-all py-0.5 text-slate-300">{line.raw}</span>
                       </div>
                     ))}

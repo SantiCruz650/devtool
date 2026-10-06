@@ -1,0 +1,18 @@
+# Estela en Netlify (estela.netlify.app)
+# publish = packages/web/dist porque Vite (sin outDir propio en
+# packages/web/vite.config.ts) emite por defecto a <root>/dist, es decir,
+# packages/web/dist. El build corre en el workspace web, no en la raiz.
+
+[build]
+  command = "npm run build -w web"
+  publish = "packages/web/dist"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# SPA fallback: React Router sirve /app, /privacidad y /terminos desde
+# index.html. Sin esto, recargar /app devuelve 404 en Netlify.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

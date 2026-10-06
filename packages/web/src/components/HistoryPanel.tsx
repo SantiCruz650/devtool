@@ -1,41 +1,7 @@
 import { useEffect, useState } from "react";
 import { listHistory } from "../lib/db";
 import type { HistoryEntry } from "../lib/db";
-
-function methodBadgeClass(method: string): string {
-  switch (method.toUpperCase()) {
-    case "GET":
-      return "bg-green-400/10 text-green-200 border-green-400/50";
-    case "POST":
-      return "bg-blue-400/10 text-blue-200 border-blue-400/50";
-    case "PUT":
-      return "bg-amber-400/10 text-amber-200 border-amber-400/50";
-    case "DELETE":
-      return "bg-red-400/10 text-red-200 border-red-400/50";
-    default:
-      return "bg-slate-400/10 text-slate-200 border-slate-400/50";
-  }
-}
-
-function statusBadgeClass(status: number): string {
-  if (status === 0) {
-    return "bg-slate-400/10 text-slate-300 border-slate-400/50";
-  }
-  if (status >= 200 && status < 300) {
-    return "bg-green-400/10 text-green-200 border-green-400/50";
-  }
-  if (status >= 300 && status < 400) {
-    return "bg-blue-400/10 text-blue-200 border-blue-400/50";
-  }
-  if (status >= 400 && status < 500) {
-    return "bg-amber-400/10 text-amber-200 border-amber-400/50";
-  }
-  return "bg-red-400/10 text-red-200 border-red-400/50";
-}
-
-function statusLabel(status: number): string {
-  return status === 0 ? "red" : String(status);
-}
+import { CopyButton, EmptyState, MethodBadge, StatusBadge } from "../ui/primitives";
 
 function relativeTime(startedAt: number): string {
   const diffMs = Math.max(0, Date.now() - startedAt);
@@ -58,7 +24,6 @@ export default function HistoryPanel() {
   const [entries, setEntries] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   async function reload(): Promise<void> {
     setLoading(true);
@@ -97,11 +62,6 @@ export default function HistoryPanel() {
 
   const selected = entries.find((entry) => entry.requestId === selectedId) ?? null;
 
-  async function copyRequestId(requestId: string): Promise<void> {
-    await navigator.clipboard.writeText(requestId);
-    setCopied(true);
-  }
-
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
@@ -116,7 +76,7 @@ export default function HistoryPanel() {
       </div>
 
       {entries.length === 0 && !loading ? (
-        <p className="text-sm text-slate-400">Aún no hay historial. Envía tu primera request.</p>
+        <EmptyState message="Nada por aquí todavía — dispara y aparece solo." />
       ) : (
         <div className="max-h-64 overflow-y-auto flex flex-col gap-1">
           {entries.map((entry) => (
@@ -127,19 +87,14 @@ export default function HistoryPanel() {
               }`}
               onClick={() => {
                 setSelectedId(entry.requestId);
-                setCopied(false);
               }}
               type="button"
             >
-              <span className={`rounded border px-2 py-0.5 text-xs font-semibold ${methodBadgeClass(entry.method)}`}>
-                {entry.method}
-              </span>
+              <MethodBadge method={entry.method} />
               <span className="min-w-0 flex-1 truncate text-slate-200" title={entry.url}>
                 {truncateUrl(entry.url)}
               </span>
-              <span className={`rounded border px-2 py-0.5 text-xs ${statusBadgeClass(entry.status)}`}>
-                {statusLabel(entry.status)}
-              </span>
+              <StatusBadge status={entry.status} />
               <span className="shrink-0 text-xs text-slate-400">{relativeTime(entry.startedAt)}</span>
             </button>
           ))}
@@ -149,14 +104,7 @@ export default function HistoryPanel() {
       {selected !== null && (
         <div className="mt-4 rounded border border-slate-700 bg-slate-950 p-3 text-sm">
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              className="max-w-full truncate rounded-full border border-cyan-400/50 bg-cyan-400/10 px-3 py-1.5 text-sm text-cyan-200"
-              onClick={() => void copyRequestId(selected.requestId)}
-              title="Copiar UUID de la petición"
-              type="button"
-            >
-              {copied ? "UUID copiado" : `UUID: ${selected.requestId}`}
-            </button>
+            <CopyButton text={selected.requestId} label={`UUID: ${selected.requestId}`} />
             {selected.backendRequestId !== undefined && (
               <span className="max-w-full truncate text-slate-300">
                 ID devuelto por el servidor: {selected.backendRequestId}
@@ -174,7 +122,9 @@ export default function HistoryPanel() {
             </div>
             <div className="flex gap-2">
               <dt className="text-slate-400">Status:</dt>
-              <dd>{selected.status === 0 ? "red" : selected.status}</dd>
+              <dd>
+                <StatusBadge status={selected.status} />
+              </dd>
             </div>
             <div className="flex gap-2">
               <dt className="text-slate-400">Duración:</dt>
