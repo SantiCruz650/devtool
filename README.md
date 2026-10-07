@@ -27,7 +27,7 @@ Solo Chromium (Chrome, Edge, Brave, Arc). Firefox aún no (File System Access AP
 
 ## Deploy
 
-Vive en Netlify: `estela.netlify.app` (build `npm run build -w web`, redirect SPA en `netlify.toml`). El dominio propio llega según tracción y feedback, no antes.
+Vive en Netlify: `esteladev.netlify.app` (build `npm run build -w web`, redirect SPA en `netlify.toml`). El dominio propio llega según tracción y feedback, no antes.
 
 ## Estructura
 
